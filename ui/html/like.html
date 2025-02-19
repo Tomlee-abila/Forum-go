@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>likes and dislikes</title>
+</head>
+<body>
+      <!-- Like and Dislike Form -->
+      <form action="/likes" method="POST" class="like-form" id="likes-dislikes">
+        <input type="hidden" name="post_id" value="{{.ID}}">
+        <button type="submit" name="type" value="like">
+            👍 Like (<span id="like-count-{{.ID}}">{{.Likes}}</span>)
+        </button>
+        <button type="submit" name="type" value="dislike">
+            👎 Dislike (<span id="dislike-count-{{.ID}}">{{.Dislikes}}</span>)
+        </button>
+    </form>
+     <script src="/likes.js"></script> <!--prone to change when the static file has been defined -->
+</body>
+</html>
