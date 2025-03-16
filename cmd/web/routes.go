@@ -18,6 +18,7 @@ func (dep *Dependencies) Routes() *http.ServeMux {
 	mux.Handle("/post", dep.AuthMiddleware(http.HandlerFunc(dep.PostHandler)))
 	// mux.Handle("/allposts", http.HandlerFunc(dep.AllPostsHandler))
 	mux.Handle("/allposts", http.HandlerFunc(models.RenderPostsPage))
+	mux.Handle("/api/check-auth", http.HandlerFunc(dep.CheckAuthHandler))
 	
 	
 

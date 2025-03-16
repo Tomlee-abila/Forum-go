@@ -1,20 +1,79 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Posts</title>
+    <title>Posts - Home</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+
+        .navbar {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            color: white;
+        }
+
+        .navbar-nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .logout-btn {
+            background-color: #e74c3c;
+        }
+
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
         .post {
             border: 1px solid #ccc;
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 5px;
+            background-color: white;
         }
 
         .post h2 {
             margin-top: 0;
+            color: #2c3e50;
         }
 
         .post img {
@@ -42,280 +101,611 @@
             height: auto;
             border-radius: 8px;
         }
+
+        .category-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .category-option {
+            display: flex;
+            align-items: center;
+        }
+
+        .category-tag {
+            background-color: #eaeaea;
+            padding: 3px 8px;
+            border-radius: 3px;
+            margin-right: 5px;
+            font-size: 0.8rem;
+        }
+
+        .forms-section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"], input[type="file"] {
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        button[type="submit"] {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #2980b9;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background-color: #eaeaea;
+            margin: 20px 0;
+        }
+
+        .comment {
+            background-color: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
     </style>
 </head>
 
-
 <body>
-    
-    <form action="/post" method="POST" id="createPostForm" enctype="multipart/form-data">
-        <label>Title </label>
-        <input type="text" name="post_title" placeholder="title">
-        <label>Content </label>
-        <input type="text" name="post_content" placeholder="What's up">
-        <label for="media">Upload Media (Image, Video, or GIF):</label>
-        <input type="file" id="media" name="media" accept=".jpg,.jpeg,.png,.gif,.mp4,.mov,.webm">
-
-        <label for="categories">Categories:</label>
-        <div class="category-group">
-            {{range .Categories}}
-            <div class="category-option">
-                <input type="checkbox" id="cat-{{.ID}}" name="categories" value="{{.Name}}">
-                <label for="cat-{{.ID}}">{{.Name}}</label>
-            </div>
-            {{end}}
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">Social Posts</a>
+        <div class="navbar-nav" id="nav-container">
+            <!-- Navbar will be populated by JavaScript based on login status -->
         </div>
-        <button type="submit">Create Post</button>
-    </form>
+    </nav>
 
-    <hr>
-    <form action="/filtered_posts" method="POST" id="filterposts">
-        <label for="categories">Filter by Categories:</label>
-        <div class="category-group">
-            {{range .Categories}}
-            <div class="category-option">
-                <input type="checkbox" id="cat-{{.ID}}" name="categories" value="{{.Name}}">
-                <label for="cat-{{.ID}}">{{.Name}}</label>
-            </div>
-            {{end}}
+    <div class="container">
+        <!-- Create Post Form (visible only to logged-in users) -->
+        <div id="create-post-section" class="forms-section" style="display: none;">
+            <h2>Create New Post</h2>
+            <form action="/post" method="POST" id="createPostForm" enctype="multipart/form-data">
+                <div>
+                    <label>Title </label>
+                    <input type="text" name="post_title" placeholder="title" required>
+                </div>
+                <div>
+                    <label>Content </label>
+                    <input type="text" name="post_content" placeholder="What's up" required>
+                </div>
+                <div>
+                    <label for="media">Upload Media (Image, Video, or GIF):</label>
+                    <input type="file" id="media" name="media" accept=".jpg,.jpeg,.png,.gif,.mp4,.mov,.webm">
+                </div>
+                <div>
+                    <label for="categories">Categories:</label>
+                    <div class="category-group">
+                        {{range .Categories}}
+                        <div class="category-option">
+                            <input type="checkbox" id="cat-{{.ID}}" name="categories" value="{{.Name}}">
+                            <label for="cat-{{.ID}}">{{.Name}}</label>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+                <button type="submit">Create Post</button>
+            </form>
         </div>
-        <button type="submit">Apply filter</button>
-    </form>
-    {{range .Posts}}
-    <div class="post">
-        <h2>{{.Title}}</h2>
-        <p>{{.Content}}</p>
-        <p><small>by {{.Username}}</small></p>
-        <!-- Display categories -->
-        <div class="categories">
-            Categories:
-            {{range .Categories}}
-            <span class="category-tag">{{.Name}}</span>
-            {{end}}
+
+        <!-- Filter Posts Form (visible to all users) -->
+        <div class="forms-section">
+            <h2>Filter Posts</h2>
+            <form action="/filtered_posts" method="POST" id="filterposts">
+                <label for="categories">Filter by Categories:</label>
+                <div class="category-group">
+                    {{range .Categories}}
+                    <div class="category-option">
+                        <input type="checkbox" id="filter-cat-{{.ID}}" name="categories" value="{{.Name}}">
+                        <label for="filter-cat-{{.ID}}">{{.Name}}</label>
+                    </div>
+                    {{end}}
+                </div>
+                <button type="submit">Apply Filter</button>
+            </form>
         </div>
-        <!-- {{if .Media}}
-        <img src="data:image/JPG;base64,{{.Media}}" alt="Post Media">
-        {{end}} -->
-        {{if .Media}}
-        <div class="media-container">
-            {{if or (eq .ContentType "image/jpeg") (eq .ContentType "image/png") (eq .ContentType "image/gif")}}
-            <img src="data:{{.ContentType}};base64,{{.Media}}" alt="Post image" class="post-media">
-            {{else if or (eq .ContentType "video/mp4") (eq .ContentType "video/quicktime") (eq .ContentType
-            "video/webm")}}
-            <video controls class="post-media">
-                <source src="data:{{.ContentType}};base64,{{.Media}}" type="{{.ContentType}}">
-                Your browser does not support the video tag.
-            </video>
-            {{end}}
-        </div>
-        {{end}}
-        <p>{{.Category}}</p>
 
-        <!-- Like & Dislike Form -->
-        <form class="like-form" action="/likes" method="POST">
-            <input type="hidden" name="id" value="{{.ID}}">
-            <input type="hidden" name="item_type" value="post">
-            <button type="submit" name="type" value="like">
-                👍 Like (<span id="like-count-post-{{.ID}}">{{.Likes}}</span>)
-            </button>
-            <button type="submit" name="type" value="dislike">
-                👎 Dislike (<span id="dislike-count-post-{{.ID}}">{{.Dislikes}}</span>)
-            </button>
-        </form>
-
-        <!-- Comment Form -->
-        <form action="/add_comment" method="POST" class="comment-form" id="comments-{{.ID}}">
-            <input type="hidden" name="post_id" value="{{.ID}}">
-            <input type="text" name="content" placeholder="Add a comment...">
-            <button type="submit">💬 Comment</button>
-        </form>
-
-        <!-- <p>Total Comments: <span id="comment-count-{{.ID}}">{{.Comments}}</span></p> -->
-        <hr>
-        {{range .Comments}}
-        <div class="comment">
+        <!-- Posts Display Section -->
+        <h1>Posts</h1>
+        {{range .Posts}}
+        <div class="post">
+            <h2>{{.Title}}</h2>
             <p>{{.Content}}</p>
-            <p><small>Posted on {{.CreatedAt}}</small></p>
+            <p><small>by {{.Username}}</small></p>
+            <!-- Display categories -->
+            <div class="categories">
+                Categories:
+                {{range .Categories}}
+                <span class="category-tag">{{.Name}}</span>
+                {{end}}
+            </div>
+            
+            {{if .Media}}
+            <div class="media-container">
+                {{if or (eq .ContentType "image/jpeg") (eq .ContentType "image/png") (eq .ContentType "image/gif")}}
+                <img src="data:{{.ContentType}};base64,{{.Media}}" alt="Post image" class="post-media">
+                {{else if or (eq .ContentType "video/mp4") (eq .ContentType "video/quicktime") (eq .ContentType
+                "video/webm")}}
+                <video controls class="post-media">
+                    <source src="data:{{.ContentType}};base64,{{.Media}}" type="{{.ContentType}}">
+                    Your browser does not support the video tag.
+                </video>
+                {{end}}
+            </div>
+            {{end}}
 
-            <!-- Comment Like & Dislike Form -->
+            <!-- Like & Dislike Form -->
             <form class="like-form" action="/likes" method="POST">
                 <input type="hidden" name="id" value="{{.ID}}">
-                <input type="hidden" name="item_type" value="comment">
+                <input type="hidden" name="item_type" value="post">
                 <button type="submit" name="type" value="like">
-                    👍 Like (<span id="like-count-comment-{{.ID}}">{{.Likes}}</span>)
+                    👍 Like (<span id="like-count-post-{{.ID}}">{{.Likes}}</span>)
                 </button>
                 <button type="submit" name="type" value="dislike">
-                    👎 Dislike (<span id="dislike-count-comment-{{.ID}}">{{.Dislikes}}</span>)
+                    👎 Dislike (<span id="dislike-count-post-{{.ID}}">{{.Dislikes}}</span>)
                 </button>
             </form>
-             <!-- Comment Form for the comments-->
-        <form action="/add_reply" method="POST" class="reply-form" id="comments-{{.ID}}">
-            <input type="hidden" name="parent_comment_id" value="{{.ID}}">
-            <input type="text" name="content" placeholder="Add a comment...">
-            <button type="submit">💬 Comment</button>
-        </form>
-        <hr>
+
+            <!-- Comment Form (visible only to logged-in users) -->
+            <form action="/add_comment" method="POST" class="comment-form" id="comments-{{.ID}}">
+                <input type="hidden" name="post_id" value="{{.ID}}">
+                <input type="text" name="content" placeholder="Add a comment...">
+                <button type="submit">💬 Comment</button>
+            </form>
+
+            <!-- Comments Section -->
+            <h4>Comments</h4>
+            {{range .Comments}}
+            <div class="comment">
+                <p>{{.Content}}</p>
+                <p><small>Posted on {{.CreatedAt}}</small></p>
+
+                <!-- Comment Like & Dislike Form -->
+                <form class="like-form" action="/likes" method="POST">
+                    <input type="hidden" name="id" value="{{.ID}}">
+                    <input type="hidden" name="item_type" value="comment">
+                    <button type="submit" name="type" value="like">
+                        👍 Like (<span id="like-count-comment-{{.ID}}">{{.Likes}}</span>)
+                    </button>
+                    <button type="submit" name="type" value="dislike">
+                        👎 Dislike (<span id="dislike-count-comment-{{.ID}}">{{.Dislikes}}</span>)
+                    </button>
+                </form>
+                
+                <!-- Reply Form (visible only to logged-in users) -->
+                <form action="/add_reply" method="POST" class="reply-form" id="reply-{{.ID}}">
+                    <input type="hidden" name="parent_comment_id" value="{{.ID}}">
+                    <input type="text" name="content" placeholder="Reply to this comment...">
+                    <button type="submit">↩️ Reply</button>
+                </form>
+            </div>
+            {{end}}
         </div>
         {{end}}
-        <hr>
     </div>
-    {{end}}
-    <hr>
+
     <script>
-
-        // Handle post creation form submission
-        document.getElementById('createPostForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const response = await fetch('/post', {
-                method: 'POST',
-                body: formData,
-                redirect: 'follow'
-            });
-
-            if (response.redirected) {
-                window.location.href=response.url
-            }else if(response.ok){
-                alert('Post created successfully!');
-                window.location.href = '/allposts';
-                console.log('post created')
-
-            }else if (response.status === 401) {
-                alert('Failed to create post: user not logged in.');
-                window.location.href = '/login';
-            } else {
-                alert('Failed to create post.');
-                // window.location.reload();
+        // Check if user is logged in
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/check-auth', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if(response.ok) {
+                    const data = await response.json();
+                    return data.isLoggedIn;
+                }
+                return false;
+            } catch (error) {
+                console.error('Error checking login status:', error);
+                return false;
             }
-        });
-        //filterposts
-        document.getElementById('filteredposts').addEventListener('submit', async (e) => {
-            e.preventDefault()
-            const formData = new FormData(e.target)
-            const response = await fetch('/filtered_posts', {
-                method: 'POST',
-                body: formData
-            })
-        //    const data=response.json()
-        //    const obj=JSON.parse(data)
-        //    console.log("json data",obj)
+        }
 
-            if (response.ok) {
-                alert("filtered succesfully by asked category")
-            }
-        });
-
-
-        // Handle like/dislike form submissions
-        // Like/dislike handler for both posts and comments
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.like-form').forEach(form => {
-                form.addEventListener('submit', async (event) => {
-                    event.preventDefault();
-
-                    const formData = new URLSearchParams();
-                    formData.append('id', event.target.querySelector('input[name="id"]').value);
-                    formData.append('item_type', event.target.querySelector('input[name="item_type"]').value);
-                    formData.append('type', event.submitter.value);
-
-                    try {
-                        const response = await fetch('/likes', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded',
-                            },
-                            body: formData
-                        });
-
-                        if (response.ok) {
-                            //error handling for easy debugging of the code
-                            const itemType = event.target.querySelector('input[name="item_type"]').value;
-                            const itemId = event.target.querySelector('input[name="id"]').value;
-                            const countSpan = document.getElementById(`${event.submitter.value}-count-${itemType}-${itemId}`);
-
-                            if (countSpan) {
-                                const currentCount = parseInt(countSpan.textContent);
-                                // countSpan.textContent = currentCount + 1;
-                                window.location.reload()
-                            }
-                        } else if (response.status === 401) {
-                            window.location.href = '/login';
-                        } else {
-                            const errorText = await response.text();
-                            console.error('Error:', errorText);
-                            alert('Failed to process like/dislike');
-                        }
-                    } catch (error) {
-                        console.error('Request failed:', error);
-                        alert('Failed to process request');
+        // Update UI based on login status
+        async function updateUI() {
+            const isLoggedIn = await checkLoginStatus();
+            const navContainer = document.getElementById('nav-container');
+            const createPostSection = document.getElementById('create-post-section');
+            
+            // Clear existing nav buttons
+            navContainer.innerHTML = '';
+            
+            if (isLoggedIn) {
+                // Show logout button
+                navContainer.innerHTML = `
+                    <a href="/profile" class="nav-btn">Profile</a>
+                    <button class="nav-btn logout-btn" id="logoutBtn">Logout</button>
+                `;
+                // Show create post form
+                if(createPostSection) {
+                    createPostSection.style.display = 'block';
+                }
+                
+                // Hide all forms that need authentication from non-logged-in users
+                document.querySelectorAll('.comment-form, .reply-form').forEach(form => {
+                    form.style.display = 'block';
+                });
+                
+                // Add logout functionality
+                document.getElementById('logoutBtn').addEventListener('click', async () => {
+                    const response = await fetch('/logout', {
+                        method: 'POST',
+                        credentials: 'include'
+                    });
+                    
+                    if (response.ok) {
+                        window.location.href = '/';
                     }
                 });
-            });
-        });
+            } else {
+                // Show login and register buttons
+                navContainer.innerHTML = `
+                    <a href="/login" class="nav-btn">Login</a>
+                    <a href="/register" class="nav-btn">Register</a>
+                `;
+                // Hide create post form
+                if(createPostSection) {
+                    createPostSection.style.display = 'none';
+                }
+                
+                // Hide all forms that need authentication from non-logged-in users
+                document.querySelectorAll('.comment-form, .reply-form').forEach(form => {
+                    form.style.display = 'none';
+                });
+            }
+        }
 
-        // Handle comment form submissions
-        document.querySelectorAll('.comment-form').forEach(form => {
-            form.addEventListener('submit', async (event) => {
-                event.preventDefault();
-
-                const formData = new URLSearchParams(new FormData(event.target));
-
-                try {
-                    const response = await fetch('/add_comment', {
+        // Run when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUI();
+            
+            // Handle post creation form submission
+            const createPostForm = document.getElementById('createPostForm');
+            if (createPostForm) {
+                createPostForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const response = await fetch('/post', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: formData
+                        body: formData,
+                        redirect: 'follow'
                     });
 
-                    if (response.ok) {
-                        alert('Comment created successfully');
-                        window.location.reload();
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else if (response.ok) {
+                        alert('Post created successfully!');
+                        window.location.href = '/allposts';
                     } else if (response.status === 401) {
-                        alert('Failed to comment: user not logged in.');
+                        alert('Failed to create post: user not logged in.');
                         window.location.href = '/login';
                     } else {
-                        alert('Failed to comment.');
+                        alert('Failed to create post.');
                     }
-                } catch (error) {
-                    console.error('Request failed:', error);
-                }
-            });
-        });
+                });
+            }
 
-        // Handle comment form submissions
-        document.querySelectorAll('.reply-form').forEach(form => {
-            form.addEventListener('submit', async (event) => {
-                event.preventDefault();
-
-                const formData = new URLSearchParams(new FormData(event.target));
-
-                try {
-                    const response = await fetch('/add_reply', {
+            // Handle filter posts form submission
+            const filterPostsForm = document.getElementById('filterposts');
+            if (filterPostsForm) {
+                filterPostsForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.target);
+                    const response = await fetch('/filtered_posts', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: formData
+                        body: formData,
+                        redirect: 'follow'
                     });
 
-                    if (response.ok) {
-                        alert('Comment created successfully');
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else if (response.ok) {
                         window.location.reload();
-                    } else if (response.status === 401) {
-                        alert('Failed to comment: user not logged in.');
-                        window.location.href = '/login';
                     } else {
-                        alert('Failed to comment.');
+                        alert('Failed to filter posts.');
                     }
-                } catch (error) {
-                    console.error('Request failed:', error);
+                });
+            }
+
+        // Handle like/dislike form submissions
+document.querySelectorAll('.like-form').forEach(form => {
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new URLSearchParams();
+        formData.append('id', event.target.querySelector('input[name="id"]').value);
+        formData.append('item_type', event.target.querySelector('input[name="item_type"]').value);
+        formData.append('type', event.submitter.value);
+
+        try {
+            const response = await fetch('/likes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                const itemType = event.target.querySelector('input[name="item_type"]').value;
+                const itemId = event.target.querySelector('input[name="id"]').value;
+                const actionType = event.submitter.value; // 'like' or 'dislike'
+                const countSpan = document.getElementById(`${actionType}-count-${itemType}-${itemId}`);
+
+                if (countSpan) {
+                    // Update count without reloading the page for a smoother experience
+                    const data = await response.json();
+                    countSpan.textContent = data.count || parseInt(countSpan.textContent) + 1;
+                }
+            } else if (response.status === 401) {
+                // Redirect to login if not authenticated
+                alert('Please log in to like or dislike content');
+                window.location.href = '/login';
+            } else {
+                const errorText = await response.text();
+                console.error('Error:', errorText);
+                alert('Failed to process like/dislike');
+            }
+        } catch (error) {
+            console.error('Request failed:', error);
+            alert('Failed to process request');
+        }
+    });
+});
+
+// Handle comment form submissions
+document.querySelectorAll('.comment-form').forEach(form => {
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new URLSearchParams(new FormData(event.target));
+
+        try {
+            const response = await fetch('/add_comment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                // Get the new comment data
+                const commentData = await response.json();
+                
+                // Find the post to add the comment to
+                const postId = formData.get('post_id');
+                const postElement = document.getElementById(`comments-${postId}`).closest('.post');
+                
+                // Create and add the new comment element without page reload
+                if (postElement) {
+                    const commentHTML = createCommentHTML(commentData);
+                    const commentsSection = postElement.querySelector('h4').nextElementSibling;
+                    commentsSection.insertAdjacentHTML('afterend', commentHTML);
+                    
+                    // Clear the comment input
+                    event.target.querySelector('input[name="content"]').value = '';
+                } else {
+                    // Fallback to reload if DOM manipulation fails
+                    window.location.reload();
+                }
+            } else if (response.status === 401) {
+                alert('Failed to comment: user not logged in.');
+                window.location.href = '/login';
+            } else {
+                alert('Failed to comment.');
+            }
+        } catch (error) {
+            console.error('Request failed:', error);
+            alert('An error occurred while adding your comment');
+        }
+    });
+});
+
+// Helper function to create comment HTML
+function createCommentHTML(comment) {
+    return `
+    <div class="comment">
+        <p>${comment.content}</p>
+        <p><small>Posted just now</small></p>
+
+        <form class="like-form" action="/likes" method="POST">
+            <input type="hidden" name="id" value="${comment.id}">
+            <input type="hidden" name="item_type" value="comment">
+            <button type="submit" name="type" value="like">
+                👍 Like (<span id="like-count-comment-${comment.id}">0</span>)
+            </button>
+            <button type="submit" name="type" value="dislike">
+                👎 Dislike (<span id="dislike-count-comment-${comment.id}">0</span>)
+            </button>
+        </form>
+        
+        <form action="/add_reply" method="POST" class="reply-form" id="reply-${comment.id}">
+            <input type="hidden" name="parent_comment_id" value="${comment.id}">
+            <input type="text" name="content" placeholder="Reply to this comment...">
+            <button type="submit">↩️ Reply</button>
+        </form>
+    </div>
+    `;
+}
+
+// Handle reply form submissions
+document.querySelectorAll('.reply-form').forEach(form => {
+    form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new URLSearchParams(new FormData(event.target));
+
+        try {
+            const response = await fetch('/add_reply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                // Similar to comment submission, we can add the reply to the DOM
+                // or just reload the page for simplicity
+                const replyData = await response.json();
+                
+                // Clear the reply input
+                event.target.querySelector('input[name="content"]').value = '';
+                
+                // Add notification of successful reply
+                const successMessage = document.createElement('div');
+                successMessage.className = 'alert-success';
+                successMessage.textContent = 'Reply added successfully!';
+                event.target.appendChild(successMessage);
+                
+                // Remove success message after 3 seconds
+                setTimeout(() => {
+                    successMessage.remove();
+                }, 3000);
+            } else if (response.status === 401) {
+                alert('Failed to reply: user not logged in.');
+                window.location.href = '/login';
+            } else {
+                alert('Failed to add reply.');
+            }
+        } catch (error) {
+            console.error('Request failed:', error);
+            alert('An error occurred while adding your reply');
+        }
+    });
+});
+
+// Add auth check endpoint routing
+async function setupSPA() {
+    // Add state handling for SPA behavior
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Intercept all internal navigation link clicks
+    document.addEventListener('click', (e) => {
+        // Find closest anchor tag if clicking on a child element
+        const anchor = e.target.closest('a');
+        
+        // Skip if not a link click or it's an external link
+        if (!anchor || anchor.getAttribute('target') === '_blank' || 
+            anchor.getAttribute('href').startsWith('http')) {
+            return;
+        }
+        
+        // Prevent default navigation
+        e.preventDefault();
+        
+        // Get the URL
+        const href = anchor.getAttribute('href');
+        
+        // Update browser history and load content
+        history.pushState({}, '', href);
+        handleRouteChange();
+    });
+    
+    // Initial route handling
+    handleRouteChange();
+}
+
+// Function to handle route changes for SPA behavior
+async function handleRouteChange() {
+    const path = window.location.pathname;
+    
+    // Don't reload the page for specific routes that should be handled by the server
+    if (path === '/login' || path === '/register' || path === '/profile') {
+        // Let the server handle these pages
+        window.location.href = path;
+        return;
+    }
+    
+    try {
+        // For routes we want to handle as SPA
+        if (path === '/' || path === '/allposts' || path.includes('/filtered_posts')) {
+            const response = await fetch(path, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
             });
-        });
-       </script>
-<script src="/ui/static/script.js"></script>
-</body>
+            
+            if (response.ok) {
+                // If the server supports JSON responses for SPA
+                try {
+                    const data = await response.json();
+                    updatePostsContent(data);
+                } catch {
+                    // If not JSON, likely HTML - just reload the page
+                    window.location.reload();
+                }
+            } else {
+                console.error('Failed to fetch route content');
+                window.location.reload();
+            }
+        }
+    } catch (error) {
+        console.error('Error handling route change:', error);
+    }
+}
 
-</html>
+// Update the posts content without page reload
+function updatePostsContent(data) {
+    // This function would update the posts display with new data
+    // Implementation depends on your specific data structure
+    
+    // Example:
+    const postsContainer = document.querySelector('.container');
+    
+    // Update posts if data contains posts
+    if (data.posts) {
+        // Clear existing posts
+        const postsSection = document.createElement('div');
+        postsSection.innerHTML = '<h1>Posts</h1>';
+        
+        // Add each post to the container
+        data.posts.forEach(post => {
+            const postElement = document.createElement('div');
+            postElement.className = 'post';
+            // Build post HTML from data...
+            // This would mirror your template rendering logic
+            
+            postsSection.appendChild(postElement);
+        });
+        
+        // Replace old posts with new ones
+        const oldPostsSection = postsContainer.querySelector('h1').parentElement;
+        oldPostsSection.replaceWith(postsSection);
+    }
+}
+
+        
+
+// Initialize SPA behavior
+setupSPA();
+        })
