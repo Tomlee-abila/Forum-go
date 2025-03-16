@@ -18,6 +18,11 @@ type Post struct {
 	TimeStamp   string
 }
 
+type Category struct {
+    ID   string
+    Name string
+}
+
 func (f *ForumModel) CreatePost(p *Post) error {
 	var username string
 	err := DB.QueryRow("SELECT username FROM users WHERE user_uuid = ?", p.UserId).Scan(&username)
@@ -132,3 +137,24 @@ func (f *ForumModel) FilterCategories(categories []string) ([]Post, error) {
 	}
 	return posts, nil
 }
+
+func (f *ForumModel) GetCategories() ([]Category, error) {
+    var categories []Category
+
+    rows, err := f.DB.Query("SELECT id, name FROM categories ORDER BY name")
+    if err != nil {
+        return nil, fmt.Errorf("error fetching categories: %v", err)
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var cat Category
+        if err := rows.Scan(&cat.ID, &cat.Name); err != nil {
+            continue // or handle error
+        }
+        categories = append(categories, cat)
+    }
+
+    return categories, nil
+}
+

@@ -57,6 +57,25 @@ func (dep *Dependencies) PostHandler(w http.ResponseWriter, r *http.Request) {
 	// 	})
 	// 	return
 	// }
+
+	// Handle GET request (rendering the form)
+	if r.Method == http.MethodGet {
+		// Fetch categories for the form
+		categories, err := dep.Forum.GetCategories()
+		if err != nil {
+			http.Error(w, "Failed to load categories", http.StatusInternalServerError)
+			return
+		}
+
+		// Render the form template with categories
+		data := map[string]interface{}{
+			"Categories": categories,
+			"CSRFToken":  r.Context().Value("csrf_token"),
+		}
+
+		RenderTemplates(w, "posts.html", data)
+		return
+	}
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
@@ -239,6 +258,13 @@ func (dep *Dependencies) PostsByFilters(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		
+		// Fetch all categories for the filter form
+	allCategories, err := dep.Forum.GetCategories()
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "Failed to fetch categories", http.StatusInternalServerError)
+		return
+	}
 		// Handle AJAX response
 		if isAJAX(r) {
 			w.Header().Set("Content-Type", "application/json")
@@ -253,7 +279,7 @@ func (dep *Dependencies) PostsByFilters(w http.ResponseWriter, r *http.Request) 
 		}
 	data:=map[string]interface{}{
 		"Posts":posts,
-		"Categories":dep.GetCategories(),
+		"Categories":allCategories,
 		"CSRFToken":r.Context().Value("csrf_token"),
 	}
 	fmt.Println(posts)

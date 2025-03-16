@@ -68,8 +68,8 @@ func (dep *Dependencies) LikeHandler(w http.ResponseWriter, r *http.Request) {
 	// Return JSON response
 	response := map[string]interface{}{
 		"success":  true,
-		"likes":    counts.Likes,
-		"dislikes": counts.Dislikes,
+		"likes":    counts["likes"],
+		"dislikes": counts["dislikes"],
 	}
 
 	w.Header().Set("Content-Type", "application/json")
