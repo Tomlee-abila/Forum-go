@@ -53,3 +53,39 @@ func (f *ForumModel) checkItemExists(itemType, itemID string) (bool, error) {
 	err := f.DB.QueryRow(query, itemID).Scan(&exists)
 	return exists, err
 }
+func (f *ForumModel) GetReactionCounts(itemType, itemID string) (map[string]int, error) {
+    counts := make(map[string]int)
+    var tableName, idColumn string
+
+    switch itemType {
+    case "post":
+        tableName = "post_likes"
+        idColumn = "post_id"
+    case "comment":
+        tableName = "comment_likes"
+        idColumn = "comment_id"
+    default:
+        return nil, fmt.Errorf("invalid item type")
+    }
+
+    // Declare separate variables for scanning
+    var likes, dislikes int
+
+    query := fmt.Sprintf(`
+        SELECT 
+            SUM(CASE WHEN type = 'like' THEN 1 ELSE 0 END) as likes,
+            SUM(CASE WHEN type = 'dislike' THEN 1 ELSE 0 END) as dislikes
+        FROM %s 
+        WHERE %s = ?`, tableName, idColumn)
+
+    err := f.DB.QueryRow(query, itemID).Scan(&likes, &dislikes)
+    if err != nil {
+        return nil, fmt.Errorf("error getting reaction counts: %v", err)
+    }
+
+    // Assign the scanned values to the map
+    counts["likes"] = likes
+    counts["dislikes"] = dislikes
+
+    return counts, nil
+}
