@@ -64,6 +64,8 @@ func (dep *Dependencies) PostHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("sess1.Value", sess1.Value, sessionId)
 			log.Println("sessioId", sessionId)
 			http.Error(w, "User not logged in: ", http.StatusUnauthorized)
+			//Redirect
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
 
