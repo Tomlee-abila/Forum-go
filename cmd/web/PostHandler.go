@@ -22,6 +22,7 @@ const (
 
 // /home/clomollo/forum/ui/html/posts.html
 func (dep *Dependencies) PostHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("PostHandler executed")
 	// if r.Method == http.MethodGet {
 	// 	// Fetch categories for the form
 	// 	rows, err := DB.Query("SELECT id, name FROM categories ORDER BY name")

@@ -169,14 +169,18 @@
             const formData = new FormData(e.target);
             const response = await fetch('/post', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                redirect: 'follow'
             });
 
-            if (response.ok) {
-                console.log('post created')
+            if (response.redirected) {
+                window.location.href=response.url
+            }else if(response.ok){
                 alert('Post created successfully!');
                 window.location.href = '/allposts';
-            } else if (response.status === 401) {
+                console.log('post created')
+
+            }else if (response.status === 401) {
                 alert('Failed to create post: user not logged in.');
                 window.location.href = '/login';
             } else {

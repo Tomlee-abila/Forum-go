@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -12,15 +11,20 @@ import (
 
 func (dep *Dependencies) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println("AuthMiddleware triggered for path:", r.URL.Path)
+
 		cookie, err := r.Cookie("session_id")
 		if err != nil || cookie.Value == "" {
+			log.Println("No session cookie found, redirecting to login")
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-		fmt.Println("Session token:", cookie.Value)
+
+		log.Println("Session token found:", cookie.Value)
 
 		session, err := dep.Forum.GetSession(cookie.Value)
 		if err != nil || session.ExpiresAt.Before(time.Now()) {
+			log.Println("Invalid or expired session, redirecting to login")
 			http.SetCookie(w, &http.Cookie{
 				Name:    "session_id",
 				Value:   "",
@@ -30,12 +34,12 @@ func (dep *Dependencies) AuthMiddleware(next http.Handler) http.Handler {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
 			return
 		}
-		// Add the user ID to the request context
+
+		log.Println("User authenticated:", session.UserID)
+
 		ctx := context.WithValue(r.Context(), "user_uuid", session.UserID)
 		ctx = context.WithValue(ctx, "session_id", session.ID)
-		log.Println("AuthMiddleware triggered")
 		next.ServeHTTP(w, r.WithContext(ctx))
-		
 	})
 }
 
