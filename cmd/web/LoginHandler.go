@@ -2,8 +2,10 @@ package main
 
 import (
 	"html/template"
+	"log"
 	"net/http"
 )
+
 // /home/lakoth/forum-1/ui/html/login.html
 func (dep *Dependencies) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	loginTemplate, err := template.ParseFiles("./ui/html/login.html")
@@ -12,7 +14,14 @@ func (dep *Dependencies) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == http.MethodGet {
-		csrfToken := r.Context().Value("csrf_token").(string)
+		csrfToken, ok := r.Context().Value("csrf_token").(string)
+		if !ok {
+
+			log.Println("CSRF token missing in request context")
+			http.Error(w, "CSRF token not found", http.StatusInternalServerError)
+			return
+		}
+		log.Println("CSRF token retrieved in handler:", csrfToken)
 		loginTemplate.ExecuteTemplate(w, "login.html", map[string]interface{}{
 			"CSRFToken": csrfToken,
 		})

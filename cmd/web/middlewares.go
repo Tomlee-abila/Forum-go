@@ -75,8 +75,10 @@ func (dep *Dependencies) CSRFMiddleware(next http.Handler) http.Handler {
 				Secure:   false,
 				Expires:  time.Now().Add(24 * time.Hour),
 			})
+			log.Println("New CSRF token set:", csrfToken)
 		} else {
 			csrfToken = cookie.Value
+			log.Println("Existing CSRF token found:", csrfToken)
 		}
 
 		// Add the CSRF token to the request context
@@ -99,6 +101,7 @@ func (dep *Dependencies) ValidateCSRFToken(r *http.Request) bool {
 	if err != nil || cookie.Value == "" {
 		return false
 	}
+	log.Println("CSRF token from cookie:", cookie.Value)
 
 	// Compare the tokens
 	return formToken == cookie.Value

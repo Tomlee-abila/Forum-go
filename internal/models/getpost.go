@@ -180,18 +180,17 @@ func RenderPostsPage(w http.ResponseWriter,r *http.Request) {
 			"Categories": categories,
 		}
 
-		userId:=r.Context().Value("user_uuid").(string)
-
-		query:=`
-		SELECT u.username
-		FROM users u 
-		WHERE u.user_uuid=?`
-        var username string
-		err=DB.QueryRow(query,userId).Scan(&username)
-		if err ==nil{
-           data["UserName"] = username
-		   data["Initial"] = string(username[0])
+	// Check if the user is logged in
+	userID, ok := r.Context().Value("user_uuid").(string)
+	if ok && userID != "" {
+		query := `SELECT u.username FROM users u WHERE u.user_uuid = ?`
+		var username string
+		err = DB.QueryRow(query, userID).Scan(&username)
+		if err == nil {
+			data["UserName"] = username
+			data["Initial"] = string(username[0])
 		}
+	}
 
 		RenderTemplates(w, "posts.html", data)
 	}
