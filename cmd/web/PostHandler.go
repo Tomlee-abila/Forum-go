@@ -50,94 +50,99 @@ func (dep *Dependencies) PostHandler(w http.ResponseWriter, r *http.Request) {
 	// 	})
 	// 	return
 	// }
-	if r.Method == http.MethodPost {
-		log.Println("Method not allowed")
-
-		sessionId := r.Context().Value("session_id")
-		sess1, err := r.Cookie("session_id")
-		if err != nil {
-			log.Println("error biggy")
-			http.Error(w, "User not logged in: ", http.StatusUnauthorized)
-			return
-		}
-		if sess1.Value != sessionId {
-			log.Println("sess1.Value", sess1.Value, sessionId)
-			log.Println("sessioId", sessionId)
-			http.Error(w, "User not logged in: ", http.StatusUnauthorized)
-			//Redirect
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
-		}
-
-		// Increase the maximum memory allocated for form parsing
-		if err := r.ParseMultipartForm(MaxFileSize); err != nil {
-			fmt.Println(err)
-			http.Error(w, "File too large", http.StatusBadRequest)
-			return
-		}
-
-		// Extract form data
-		postContent := r.FormValue("post_content")
-		postId := uuid.New().String()
-		categories := r.Form["categories"]
-		title := r.FormValue("post_title")
-		userId := r.Context().Value("user_uuid").(string)
-
-		post := models.Post{
-			PostId:      postId,
-			UserId:      userId,
-			Category:    categories,
-			Title:       title,
-			PostContent: postContent,
-		}
-
-		// Handle file upload
-		file, header, err := r.FormFile("media")
-		if err == nil {
-			defer file.Close()
-
-			// Validate file size
-			if header.Size > MaxFileSize {
-				http.Error(w, "File size exceeds maximum limit", http.StatusBadRequest)
-				return
-			}
-
-			// Validate file type
-			ext := strings.ToLower(filepath.Ext(header.Filename))
-			if !isValidFileType(ext) {
-				http.Error(w, "Invalid file type", http.StatusBadRequest)
-				return
-			}
-
-			// Read file in chunks
-			buffer := make([]byte, 0, header.Size)
-			tempBuffer := make([]byte, ChunkSize)
-			for {
-				n, err := file.Read(tempBuffer)
-				if err == io.EOF {
-					break
-				}
-				if err != nil {
-					http.Error(w, "Error reading file", http.StatusInternalServerError)
-					return
-				}
-				buffer = append(buffer, tempBuffer[:n]...)
-			}
-
-			post.Media = buffer
-			post.ContentType = getContentType(ext)
-		}
-
-		if err := dep.Forum.CreatePost(&post); err != nil {
-			log.Println("Error while quering post db: ", err)
-			return
-		}
-
-		// http.Redirect(w, r, "/allposts", http.StatusSeeOther)
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Post created successfully"))
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
 	}
-}
+	
+	// Session validation
+	// sessionId, ok := r.Context().Value("session_id").(string)
+	// if !ok || sessionId == "" {
+	// 	log.Println("Session ID is missing or invalid")
+	// 	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	// 	return
+	// }
+	
+	// sess1, err := r.Cookie("session_id")
+	// if err != nil || sess1.Value == "" {
+	// 	log.Println("No session cookie found")
+	// 	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	// 	return
+	// }
+	
+	// if sess1.Value != sessionId {
+	// 	log.Println("sess1.Value", sess1.Value, sessionId)
+	// 	http.Redirect(w, r, "/login", http.StatusSeeOther)
+	// 	return
+	// }
+	
+	// Increase max memory for form parsing
+	if err := r.ParseMultipartForm(MaxFileSize); err != nil {
+		fmt.Println(err)
+		http.Error(w, "File too large", http.StatusBadRequest)
+		return
+	}
+	
+	// Extract form data
+	postContent := r.FormValue("post_content")
+	postId := uuid.New().String()
+	categories := r.Form["categories"]
+	title := r.FormValue("post_title")
+	userId := r.Context().Value("user_uuid").(string)
+	
+	post := models.Post{
+		PostId:      postId,
+		UserId:      userId,
+		Category:    categories,
+		Title:       title,
+		PostContent: postContent,
+	}
+	
+	// Handle file upload
+	file, header, err := r.FormFile("media")
+	if err == nil {
+		defer file.Close()
+	
+		// Validate file size
+		if header.Size > MaxFileSize {
+			http.Error(w, "File size exceeds maximum limit", http.StatusBadRequest)
+			return
+		}
+	
+		// Validate file type
+		ext := strings.ToLower(filepath.Ext(header.Filename))
+		if !isValidFileType(ext) {
+			http.Error(w, "Invalid file type", http.StatusBadRequest)
+			return
+		}
+	
+		// Read file in chunks
+		buffer := make([]byte, 0, header.Size)
+		tempBuffer := make([]byte, ChunkSize)
+		for {
+			n, err := file.Read(tempBuffer)
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				http.Error(w, "Error reading file", http.StatusInternalServerError)
+				return
+			}
+			buffer = append(buffer, tempBuffer[:n]...)
+		}
+	
+		post.Media = buffer
+		post.ContentType = getContentType(ext)
+	}
+	
+	if err := dep.Forum.CreatePost(&post); err != nil {
+		log.Println("Error while querying post DB: ", err)
+		http.Error(w, "Failed to create post", http.StatusInternalServerError)
+		return
+	}
+	
+	http.Redirect(w, r, "/allposts", http.StatusSeeOther)
+}	
 
 // func (dep *Dependencies) AllPostsHandler(w http.ResponseWriter, r *http.Request) {
 // 	if r.Method != http.MethodGet {

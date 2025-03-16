@@ -33,6 +33,7 @@ func (dep *Dependencies) AuthMiddleware(next http.Handler) http.Handler {
 		// Add the user ID to the request context
 		ctx := context.WithValue(r.Context(), "user_uuid", session.UserID)
 		ctx = context.WithValue(ctx, "session_id", session.ID)
+		log.Println("AuthMiddleware triggered")
 		next.ServeHTTP(w, r.WithContext(ctx))
 		
 	})
