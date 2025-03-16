@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 )
@@ -56,6 +57,21 @@ func (dep *Dependencies) LikeHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to process like/dislike", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("liked/disliked created successfully"))
+
+	// Get updated counts
+	counts, err := dep.Forum.GetReactionCounts(itemType, itemID)
+	if err != nil {
+		log.Printf("Count error: %v", err)
+		http.Error(w, `{"error": "Failed to get counts"}`, http.StatusInternalServerError)
+		return
+	}
+	// Return JSON response
+	response := map[string]interface{}{
+		"success":  true,
+		"likes":    counts.Likes,
+		"dislikes": counts.Dislikes,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
