@@ -430,14 +430,17 @@
         }
         
         document.body.classList.add('page-loaded');
+        updateNavigation();
         loadUserProfile();
         initTabs();
         setupPostForm();
-        updateNavigation();
         
     } catch (error) {
         console.error('Initialization error:', error);
-        window.location.href = '/login';
+        displayError('Error initializing page: ' + error.message);
+        setTimeout(() => {
+            window.location.href = '/login';
+        }, 3000);
     }
 });
 
@@ -455,7 +458,7 @@
         // console.log('Auth check response:', response.status, await response.text());
                 if(response.ok) {
                     const data = await response.json();
-                    return data;
+                    return {isLoggedIn:true, ...data};
                 }
                 return {isLoggedIn:false};
             } catch (error) {
@@ -463,6 +466,14 @@
                 return {isLoggedIn: false};
             }
         }
+
+        // If user is not logged in, redirect to /login
+document.addEventListener('DOMContentLoaded', async function () {
+    const authStatus = await checkLoginStatus();
+    if (!authStatus.isLoggedIn) {
+        window.location.href = '/login';
+    }
+})
 
         // Update navigation based on login status
         async function updateNavigation() {
@@ -512,8 +523,11 @@ async function handleLogout() {
         // Load user profile data
         async function loadUserProfile() {
             try {
-                const response = await fetch('/api/profile', {
+                const response = await fetch('/profile', {
 method: 'GET',
+headers: {
+                'Accept': 'application/json'
+            },
                     credentials: 'include'
                 });
                 // console.log('Profile response:', response.status, await response.text());

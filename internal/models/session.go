@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +29,8 @@ func (f *ForumModel) CreateSession(userID string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to insert session: %w", err)
 	}
+
+	log.Println("Session created successfully!")
 
 	return SessionID, nil
 }
