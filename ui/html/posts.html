@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -8,10 +8,29 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-        }
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    overflow-x: hidden; /* Only prevent horizontal overflow */
+    overflow-y: auto; /* Allow vertical scrolling */
+}
+
+body:not(.page-loaded) .container {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+body.page-loaded .container {
+    opacity: 1;
+}
+
+
+        .container {
+            max-width: 1200px;
+    margin: 20px auto;
+    padding: 0 20px;
+    min-height: 80vh; /* Use viewport height instead of fixed pixel value */
+}
 
         .navbar {
             background-color: #2c3e50;
@@ -91,9 +110,12 @@
         }
 
         .media-container {
+            position: relative;
             margin: 1rem 0;
             max-width: 100%;
             overflow: hidden;
+            min-height: 50px;
+            width: 100%;
         }
 
         .post-media {
@@ -349,6 +371,11 @@
                     createPostSection.style.display = 'block';
                 }
                 
+                   // Show all forms that need authentication
+        document.querySelectorAll('.comment-form, .reply-form').forEach(form => {
+            form.style.display = 'block';
+        });
+
                 // Hide all forms that need authentication from non-logged-in users
                 document.querySelectorAll('.comment-form, .reply-form').forEach(form => {
                     form.style.display = 'block';
@@ -372,9 +399,28 @@
                     <a href="/register" class="nav-btn">Register</a>
                 `;
                 // Hide create post form
-                if(createPostSection) {
-                    createPostSection.style.display = 'none';
-                }
+                 if (createPostSection) {
+            createPostSection.style.display = 'none';
+            
+            // Check if there's already a prompt to avoid duplicates
+            const existingPrompt = document.getElementById('create-post-prompt');
+            if (!existingPrompt) {
+                // Add a "Create Post" button that redirects to login
+                const createPostPrompt = document.createElement('div');
+                createPostPrompt.id = 'create-post-prompt';
+                createPostPrompt.className = 'forms-section';
+                createPostPrompt.innerHTML = `
+                    <h2>Create New Post</h2>
+                    <p>Please <a href="/login">log in</a> to create a post</p>
+                    <button id="login-to-post" class="nav-btn">Login to Post</button>
+                `;
+                createPostSection.parentNode.insertBefore(createPostPrompt, createPostSection);
+                // Add event listener to the login button
+                document.getElementById('login-to-post').addEventListener('click', () => {
+                    window.location.href = '/login';
+                });
+            }
+        }
                 
                 // Hide all forms that need authentication from non-logged-in users
                 document.querySelectorAll('.comment-form, .reply-form').forEach(form => {
@@ -385,13 +431,26 @@
 
         // Run when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            updateUI();
+            // Add a class to indicate the page is ready
+    document.body.classList.add('page-loaded');
+    
+    // Perform UI updates with a slight delay to allow the page to render first
+    setTimeout(() => {
+        updateUI();
+    }, 50);
             
             // Handle post creation form submission
             const createPostForm = document.getElementById('createPostForm');
             if (createPostForm) {
                 createPostForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
+                    //Check login status before submitting
+                    const loginstatus=await checkLoginStatus();
+                    if(!loginstatus){
+                        alert('PLease log in to create a post')
+                        window.location.href='/login'
+                        return;
+                    }
                     const formData = new FormData(e.target);
                     const response = await fetch('/post', {
                         method: 'POST',
@@ -404,13 +463,77 @@
                     } else if (response.ok) {
                         alert('Post created successfully!');
                         window.location.href = '/allposts';
-                    } else if (response.status === 401) {
-                        alert('Failed to create post: user not logged in.');
-                        window.location.href = '/login';
+                    // } else if (response.status === 401) {
+                    //     alert('Failed to create post: user not logged in.');
+                    //     window.location.href = '/login';
                     } else {
                         alert('Failed to create post.');
                     }
                 });
+            }
+
+            //Add a 'Create Post' button for non-logged in users
+            async function updateUI(){
+                const isLoggedIn= await checkLoginStatus();
+                const navContainer=document.getElementById('nav-container');
+                const createPostSEction=document.getElementById('create-post-section');
+
+                //Clear existing nav buttons
+                navContainer.innerHTML='';
+
+                if (isLoggedIn) {
+        // Show logout button and profile link
+        navContainer.innerHTML = `
+            <a href="/profile" class="nav-btn">Profile</a>
+            <button class="nav-btn logout-btn" id="logoutBtn">Logout</button>
+        `;
+        // Show create post form
+        if (createPostSection) {
+            createPostSection.style.display = 'block';
+        }
+        
+        // Show all forms that need authentication
+        document.querySelectorAll('.comment-form, .reply-form').forEach(form => {
+            form.style.display = 'block';
+        });
+        
+        // Add logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            const response = await fetch('/logout', {
+                method: 'POST',
+                credentials: 'include'
+            });
+            
+            if (response.ok) {
+                window.location.href = '/';
+            }
+        });
+                }else{
+                    //Show login and register buttons
+                    navContainer.innerHTML=`
+                       <a href="/login" class="nav-btn">Login</a>
+            <a href="/register" class="nav-btn">Register</a>
+                    `;
+                    //Hide create post form but add a login prompt button
+                    if(createPostSection){
+                        createPostSection.style.display='none';
+
+                        //Add a "Create Post " button that redirects to login
+                        const createPostPrompt=document.createElement('div');
+                        createPostPrompt.className = 'forms-section';
+            createPostPrompt.innerHTML = `
+                <h2>Create New Post</h2>
+                <p>Please <a href="/login">log in</a> to create a post</p>
+                <button id="login-to-post" class="nav-btn">Login to Post</button>
+            `;
+            createPostSection.parentNode.insertBefore(createPostPrompt, createPostSection);
+            // Add event listener to the login button
+            document.getElementById('login-to-post').addEventListener('click', () => {
+                window.location.href = '/login';
+            });
+
+                    }
+                }
             }
 
             // Handle filter posts form submission
@@ -440,10 +563,23 @@ document.querySelectorAll('.like-form').forEach(form => {
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
 
+          // Check login status first
+          const isLoggedIn = await checkLoginStatus();
+        if (!isLoggedIn) {
+            alert('Please log in to like or dislike content');
+            window.location.href = '/login';
+            return;
+        }
+
         const formData = new URLSearchParams();
-        formData.append('id', event.target.querySelector('input[name="id"]').value);
-        formData.append('item_type', event.target.querySelector('input[name="item_type"]').value);
-        formData.append('type', event.submitter.value);
+        const id = event.target.querySelector('input[name="id"]').value;
+        const itemType = event.target.querySelector('input[name="item_type"]').value;
+        const actionType = event.submitter.value; // 'like' or 'dislike'
+        
+   
+        formData.append('id', id);
+        formData.append('item_type', itemType);
+        formData.append('type', actionType);
 
         try {
             const response = await fetch('/likes', {
@@ -455,18 +591,32 @@ document.querySelectorAll('.like-form').forEach(form => {
             });
 
             if (response.ok) {
-                const itemType = event.target.querySelector('input[name="item_type"]').value;
-                const itemId = event.target.querySelector('input[name="id"]').value;
-                const actionType = event.submitter.value; // 'like' or 'dislike'
-                const countSpan = document.getElementById(`${actionType}-count-${itemType}-${itemId}`);
-
-                if (countSpan) {
-                    // Update count without reloading the page for a smoother experience
-                    const data = await response.json();
-                    countSpan.textContent = data.count || parseInt(countSpan.textContent) + 1;
+                const data = await response.json();
+                
+                // Update both like and dislike counts based on returned data
+                const likeCountSpan = document.getElementById(`like-count-${itemType}-${id}`);
+                const dislikeCountSpan = document.getElementById(`dislike-count-${itemType}-${id}`);
+                
+                if (likeCountSpan && data.likeCount !== undefined) {
+                    likeCountSpan.textContent = data.likeCount;
+                }
+                
+                if (dislikeCountSpan && data.dislikeCount !== undefined) {
+                    dislikeCountSpan.textContent = data.dislikeCount;
+                }
+                
+                // Toggle active state on buttons
+                const likeButton = event.target.querySelector('button[value="like"]');
+                const dislikeButton = event.target.querySelector('button[value="dislike"]');
+                
+                if (actionType === 'like') {
+                    likeButton.classList.toggle('active', data.liked);
+                    dislikeButton.classList.remove('active');
+                } else {
+                    dislikeButton.classList.toggle('active', data.disliked);
+                    likeButton.classList.remove('active');
                 }
             } else if (response.status === 401) {
-                // Redirect to login if not authenticated
                 alert('Please log in to like or dislike content');
                 window.location.href = '/login';
             } else {
@@ -481,10 +631,26 @@ document.querySelectorAll('.like-form').forEach(form => {
     });
 });
 
+// Add CSS for active state
+document.head.insertAdjacentHTML('beforeend', `
+<style>
+    .like-form button.active {
+        background-color: #2c3e50;
+        color: white;
+    }
+</style>
+`);
 // Handle comment form submissions
 document.querySelectorAll('.comment-form').forEach(form => {
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
+            // Check login status first
+            const isLoggedIn = await checkLoginStatus();
+        if (!isLoggedIn) {
+            alert('Please log in to comment');
+            window.location.href = '/login';
+            return;
+        }
 
         const formData = new URLSearchParams(new FormData(event.target));
 
@@ -561,6 +727,14 @@ function createCommentHTML(comment) {
 document.querySelectorAll('.reply-form').forEach(form => {
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
+
+         // Check login status first
+         const isLoggedIn = await checkLoginStatus();
+        if (!isLoggedIn) {
+            alert('Please log in to reply');
+            window.location.href = '/login';
+            return;
+        }
 
         const formData = new URLSearchParams(new FormData(event.target));
 
@@ -708,4 +882,7 @@ function updatePostsContent(data) {
 
 // Initialize SPA behavior
 setupSPA();
-        })
+        });
+    </script>
+<!-- </body>
+</html> -->

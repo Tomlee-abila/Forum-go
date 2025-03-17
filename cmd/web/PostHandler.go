@@ -25,10 +25,10 @@ const (
 func (dep *Dependencies) PostHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("PostHandler executed")
 	// Add CSRF validation
-	if !dep.ValidateCSRFToken(r) {
-		http.Error(w, "Invalid CSRF token", http.StatusForbidden)
-		return
-	}
+	// if !dep.ValidateCSRFToken(r) {
+	// 	http.Error(w, "Invalid CSRF token", http.StatusForbidden)
+	// 	return
+	// }
 	// if r.Method == http.MethodGet {
 	// 	// Fetch categories for the form
 	// 	rows, err := DB.Query("SELECT id, name FROM categories ORDER BY name")
