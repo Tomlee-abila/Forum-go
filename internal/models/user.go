@@ -10,13 +10,14 @@ import (
 )
 
 type User struct {
-	ID       int
-	UserID   string
-	Email    string
-	Username string
-	Password string
-	// forum    database.ForumModel
+	ID        int
+	UserID    string
+	Email     string
+	Username  string
+	Password  string
+	// ImagePath string // This correctly stores 'image_path' from the database
 }
+
 
 func (f *ForumModel) CreateUser(userUuid, email, username, password string) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -51,12 +52,15 @@ func (u *User) CheckPassword(password string) bool {
 	return err == nil
 }
 
-func (f *ForumModel) GetUserByID(userID int) (*User, error) {
-	query := "SELECT id, email, username, password, image_path FROM users WHERE id=?"
+func (f *ForumModel) GetUserByID(uuid string) (*User, error) {
+	query :="SELECT id, user_uuid, email, username, password FROM users WHERE user_uuid=?"
 
-	row := f.DB.QueryRow(query, userID)
+
+	row := f.DB.QueryRow(query, uuid)
 	user := User{}
-	err := row.Scan(&user.ID, &user.Email, &user.Username, &user.Password)
+	// var imagePath sql.NullString
+	err := row.Scan(&user.ID, &user.UserID, &user.Email, &user.Username, &user.Password)
+
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, nil
@@ -64,6 +68,14 @@ func (f *ForumModel) GetUserByID(userID int) (*User, error) {
 		log.Printf("Failed to get user by ID: %v", err)
 		return nil, fmt.Errorf("failed to get user by ID: %w", err)
 	}
+	   // Assign imagePath only if it's not NULL
+	   
+    // Convert NULL to an empty string
+    // if imagePath.Valid {
+    //     user.ImagePath = imagePath.String
+    // } else {
+    //     user.ImagePath = "" // If NULL, set empty string
+    // }
 	return &user, nil
 }
 

@@ -10,17 +10,18 @@ type Post struct {
 	Id          int
 	PostId      string
 	UserId      string
+	Username    string
 	Media       []byte
 	Category    []string
 	Title       string
 	PostContent string
 	ContentType string
-	TimeStamp   string
+	CreatedAt   string
 }
 
 type Category struct {
-    ID   string
-    Name string
+	ID   string
+	Name string
 }
 
 func (f *ForumModel) CreatePost(p *Post) error {
@@ -39,8 +40,8 @@ func (f *ForumModel) CreatePost(p *Post) error {
 	}
 
 	// Insert categories
-	fmt.Println("categories",p.Category)
-	
+	fmt.Println("categories", p.Category)
+
 	for _, categoryNames := range p.Category {
 		_, err = DB.Exec(`
             INSERT INTO post_categories (post_id, category_id)
@@ -80,13 +81,17 @@ func (f *ForumModel) AllPosts() ([]Post, error) {
 	}
 	for rows.Next() {
 		var p Post
-		err := rows.Scan(&p.Id, &p.PostId, &p.UserId, &p.Title, &p.PostContent, &p.TimeStamp)
+		err := rows.Scan(
+            &p.Id, &p.PostId, &p.UserId, &p.Username, // Added Username
+            &p.Title, &p.PostContent, &p.Media, 
+            &p.ContentType, &p.CreatedAt,
+        )
 		if err != nil {
 			return nil, err
 		}
 		posts = append(posts, p)
 	}
-	fmt.Println("All posts",posts)
+	fmt.Println("All posts", posts)
 	return posts, nil
 }
 
@@ -94,40 +99,34 @@ func (f *ForumModel) FilterCategories(categories []string) ([]Post, error) {
 	posts := []Post{}
 	for _, categoryID := range categories {
 		var postId string
-		query1:=`SELECT post_id FROM post_categories WHERE category_id = ?`
+		query1 := `SELECT post_id FROM post_categories WHERE category_id = ?`
 		rows, err := f.DB.Query(query1, categoryID)
 		if err != nil {
 			fmt.Println(err)
 			return nil, err
 		}
 
-		for rows.Next(){
-			rows.Scan( &postId)
+		for rows.Next() {
+			rows.Scan(&postId)
 			query := `SELECT post_id, user_uuid, title, content,  media, content_type, created_at
 			FROM posts p 		
 			WHERE post_id = ?`
 
 			var p Post
-			err = f.DB.QueryRow(query, postId).Scan(&p.PostId, &p.UserId,  &p.Title,  &p.PostContent, &p.Media, &p.ContentType, &p.TimeStamp)
-			
+			err = f.DB.QueryRow(query, postId).Scan(&p.PostId, &p.UserId, &p.Title, &p.PostContent, &p.Media, &p.ContentType, &p.CreatedAt)
 			if err != nil {
 				return nil, err
 			}
 			posts = append(posts, p)
 		}
 
-
-
-
-
-		
 		// rows, err =
 		// if err != nil {
 		// 	fmt.Println(err)
 		// 	return nil, err
 		// }
 		// for rows.Next() {
-			
+
 		// 	err := rows.Scan(&p.Id, &p.PostId, &p.UserId, &p.Media, &p.Category, &p.Title, &p.PostContent, &p.ContentType, &p.TimeStamp)
 		// 	if err != nil {
 		// 		return nil, err
@@ -139,22 +138,21 @@ func (f *ForumModel) FilterCategories(categories []string) ([]Post, error) {
 }
 
 func (f *ForumModel) GetCategories() ([]Category, error) {
-    var categories []Category
+	var categories []Category
 
-    rows, err := f.DB.Query("SELECT id, name FROM categories ORDER BY name")
-    if err != nil {
-        return nil, fmt.Errorf("error fetching categories: %v", err)
-    }
-    defer rows.Close()
+	rows, err := f.DB.Query("SELECT id, name FROM categories ORDER BY name")
+	if err != nil {
+		return nil, fmt.Errorf("error fetching categories: %v", err)
+	}
+	defer rows.Close()
 
-    for rows.Next() {
-        var cat Category
-        if err := rows.Scan(&cat.ID, &cat.Name); err != nil {
-            continue // or handle error
-        }
-        categories = append(categories, cat)
-    }
+	for rows.Next() {
+		var cat Category
+		if err := rows.Scan(&cat.ID, &cat.Name); err != nil {
+			continue // or handle error
+		}
+		categories = append(categories, cat)
+	}
 
-    return categories, nil
+	return categories, nil
 }
-

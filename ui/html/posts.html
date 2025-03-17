@@ -433,11 +433,8 @@ body.page-loaded .container {
         document.addEventListener('DOMContentLoaded', () => {
             // Add a class to indicate the page is ready
     document.body.classList.add('page-loaded');
-    
-    // Perform UI updates with a slight delay to allow the page to render first
-    setTimeout(() => {
+
         updateUI();
-    }, 50);
             
             // Handle post creation form submission
             const createPostForm = document.getElementById('createPostForm');
@@ -472,69 +469,69 @@ body.page-loaded .container {
                 });
             }
 
-            //Add a 'Create Post' button for non-logged in users
-            async function updateUI(){
-                const isLoggedIn= await checkLoginStatus();
-                const navContainer=document.getElementById('nav-container');
-                const createPostSEction=document.getElementById('create-post-section');
+        //     //Add a 'Create Post' button for non-logged in users
+        //     async function updateUI(){
+        //         const isLoggedIn= await checkLoginStatus();
+        //         const navContainer=document.getElementById('nav-container');
+        //         const createPostSEction=document.getElementById('create-post-section');
 
-                //Clear existing nav buttons
-                navContainer.innerHTML='';
+        //         //Clear existing nav buttons
+        //         navContainer.innerHTML='';
 
-                if (isLoggedIn) {
-        // Show logout button and profile link
-        navContainer.innerHTML = `
-            <a href="/profile" class="nav-btn">Profile</a>
-            <button class="nav-btn logout-btn" id="logoutBtn">Logout</button>
-        `;
-        // Show create post form
-        if (createPostSection) {
-            createPostSection.style.display = 'block';
-        }
+        //         if (isLoggedIn) {
+        // // Show logout button and profile link
+        // navContainer.innerHTML = `
+        //     <a href="/profile" class="nav-btn">Profile</a>
+        //     <button class="nav-btn logout-btn" id="logoutBtn">Logout</button>
+        // `;
+        // // Show create post form
+        // if (createPostSection) {
+        //     createPostSection.style.display = 'block';
+        // }
         
-        // Show all forms that need authentication
-        document.querySelectorAll('.comment-form, .reply-form').forEach(form => {
-            form.style.display = 'block';
-        });
+        // // Show all forms that need authentication
+        // document.querySelectorAll('.comment-form, .reply-form').forEach(form => {
+        //     form.style.display = 'block';
+        // });
         
-        // Add logout functionality
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            const response = await fetch('/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
+        // // Add logout functionality
+        // document.getElementById('logoutBtn').addEventListener('click', async () => {
+        //     const response = await fetch('/logout', {
+        //         method: 'POST',
+        //         credentials: 'include'
+        //     });
             
-            if (response.ok) {
-                window.location.href = '/';
-            }
-        });
-                }else{
-                    //Show login and register buttons
-                    navContainer.innerHTML=`
-                       <a href="/login" class="nav-btn">Login</a>
-            <a href="/register" class="nav-btn">Register</a>
-                    `;
-                    //Hide create post form but add a login prompt button
-                    if(createPostSection){
-                        createPostSection.style.display='none';
+        //     if (response.ok) {
+        //         window.location.href = '/';
+        //     }
+        // });
+        //         }else{
+        //             //Show login and register buttons
+        //             navContainer.innerHTML=`
+        //                <a href="/login" class="nav-btn">Login</a>
+        //     <a href="/register" class="nav-btn">Register</a>
+        //             `;
+        //             //Hide create post form but add a login prompt button
+        //             if(createPostSection){
+        //                 createPostSection.style.display='none';
 
-                        //Add a "Create Post " button that redirects to login
-                        const createPostPrompt=document.createElement('div');
-                        createPostPrompt.className = 'forms-section';
-            createPostPrompt.innerHTML = `
-                <h2>Create New Post</h2>
-                <p>Please <a href="/login">log in</a> to create a post</p>
-                <button id="login-to-post" class="nav-btn">Login to Post</button>
-            `;
-            createPostSection.parentNode.insertBefore(createPostPrompt, createPostSection);
-            // Add event listener to the login button
-            document.getElementById('login-to-post').addEventListener('click', () => {
-                window.location.href = '/login';
-            });
+        //                 //Add a "Create Post " button that redirects to login
+        //                 const createPostPrompt=document.createElement('div');
+        //                 createPostPrompt.className = 'forms-section';
+        //     createPostPrompt.innerHTML = `
+        //         <h2>Create New Post</h2>
+        //         <p>Please <a href="/login">log in</a> to create a post</p>
+        //         <button id="login-to-post" class="nav-btn">Login to Post</button>
+        //     `;
+        //     createPostSection.parentNode.insertBefore(createPostPrompt, createPostSection);
+        //     // Add event listener to the login button
+        //     document.getElementById('login-to-post').addEventListener('click', () => {
+        //         window.location.href = '/login';
+        //     });
 
-                    }
-                }
-            }
+        //             }
+        //         }
+        //     }
 
             // Handle filter posts form submission
             const filterPostsForm = document.getElementById('filterposts');
@@ -813,38 +810,25 @@ async function setupSPA() {
 async function handleRouteChange() {
     const path = window.location.pathname;
     
-    // Don't reload the page for specific routes that should be handled by the server
-    if (path === '/login' || path === '/register' || path === '/profile') {
-        // Let the server handle these pages
-        window.location.href = path;
-        return;
+    // Never intercept these routes - let server handle them
+    if (['/login', '/register', '/profile'].includes(path)) {
+        return; // Allow full page load
     }
-    
+
     try {
-        // For routes we want to handle as SPA
-        if (path === '/' || path === '/allposts' || path.includes('/filtered_posts')) {
-            const response = await fetch(path, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            
-            if (response.ok) {
-                // If the server supports JSON responses for SPA
-                try {
-                    const data = await response.json();
-                    updatePostsContent(data);
-                } catch {
-                    // If not JSON, likely HTML - just reload the page
-                    window.location.reload();
-                }
-            } else {
-                console.error('Failed to fetch route content');
-                window.location.reload();
-            }
+        const response = await fetch(path, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            updatePostsContent(data);
+        } else {
+            window.location.reload();
         }
     } catch (error) {
-        console.error('Error handling route change:', error);
+        console.error('Route error:', error);
+        window.location.reload();
     }
 }
 
