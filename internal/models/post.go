@@ -99,14 +99,43 @@ func FindPostById(id string) (*Post, error) {
 }
 
 func AllPosts() ([]Post, error) {
-	query := "SELECT * FROM posts"
-	rows, err := DB.Query(query)
+	var posts []Post
+	rows, err := DB.Query(`
+		SELECT 
+			post_id,
+			user_uuid,
+			username,
+			title,
+			content,
+			media,
+			COALESCE(content_type, ''),
+			created_at
+		FROM posts 
+		ORDER BY created_at DESC
+	`)
 	if err != nil {
 		return nil, err
 	}
-	posts, err := PostsRows(rows)
-	if err != nil {
-		return nil, err
+	defer rows.Close()
+
+	for rows.Next() {
+		var p Post
+		err := rows.Scan(
+			&p.PostId,
+			&p.UserId,
+			&p.UserName,
+			&p.Title,
+			&p.Content,
+			&p.Media,
+			&p.ContentType,
+			&p.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		p.MediaString = MediaToBase64(p.Media)
+		p.Initial = string(p.UserName[0])
+		posts = append(posts, p)
 	}
 	return posts, nil
 }
